@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from database import SessionLocal
+from app.database import SessionLocal
 from models import Analysis
 from sqlalchemy.exc import SQLAlchemyError
 
