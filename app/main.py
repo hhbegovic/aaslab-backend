@@ -1,6 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import auth, analyses
+from routers import analysis, user, settings
+from upload import router as upload_router
+from fastapi.staticfiles import StaticFiles
 
 app = FastAPI()
 
@@ -13,9 +15,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Inkludera router-filerna
-app.include_router(auth.router, prefix="/auth", tags=["Auth"])
-app.include_router(analyses.router, prefix="/analyses", tags=["Analyses"])
+# Inkludera alla routers
+app.include_router(analysis.router)
+app.include_router(user.router)
+app.include_router(upload_router)
+app.include_router(settings.router)
+
+# Serva uppladdade filer
+app.mount("/uploaded_files", StaticFiles(directory="uploaded_files"), name="uploaded_files")
 
 @app.get("/")
 def root():

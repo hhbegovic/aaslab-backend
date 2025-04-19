@@ -67,7 +67,7 @@ def upload_banner_image(file: UploadFile = File(...)):
         with open(file_path, "wb") as f:
             shutil.copyfileobj(file.file, f)
 
-        url = f"http://192.168.1.14:8000/uploaded_files/{filename}"
+        url = f"https://aaslab-api.onrender.com/uploaded_files/{filename}"
         return {"banner_image_path": url}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Upload failed: {e}")

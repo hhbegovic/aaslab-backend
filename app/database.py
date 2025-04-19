@@ -1,15 +1,13 @@
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+from dotenv import load_dotenv
+import os
 
-# Ange din PostgreSQL-URL här
-DATABASE_URL = "postgresql://admin:Ha93ja94@localhost/aaslab"
+load_dotenv()
 
-# Skapa databasmotor
+DATABASE_URL = os.getenv("DATABASE_URL")
+
 engine = create_engine(DATABASE_URL)
-
-# Skapar sessionsinstans
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-# Basmodell för tabeller
 Base = declarative_base()

@@ -38,7 +38,7 @@ async def upload_analysis(
                 f.write(await file.read())
 
             # ✅ Konvertera till URL
-            public_url = f"http://192.168.1.14:8000/{file_location.replace(os.sep, '/')}"
+            public_url = f"https://aaslab-api.onrender.com/{file_location.replace(os.sep, '/')}"
             saved_paths.append(public_url)
 
         analysis = Analysis(
