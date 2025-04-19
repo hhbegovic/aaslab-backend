@@ -1,7 +1,7 @@
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
-from database import SessionLocal
+from app.database import SessionLocal
 from models import Analysis
 import os
 import uuid

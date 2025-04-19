@@ -1,4 +1,4 @@
-from database import Base, engine
+from app.database import Base, engine
 from models import User, Analysis, Setting
 
 print("⏳ Creating tables in Supabase...")
