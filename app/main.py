@@ -6,22 +6,19 @@ from fastapi.staticfiles import StaticFiles
 
 app = FastAPI()
 
-# Tillåt kommunikation från Flutter-appen
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Du kan byta till t.ex. ["http://localhost:5173"] vid behov
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Inkludera alla routers
 app.include_router(analysis.router)
 app.include_router(user.router)
-app.include_router(upload_router)
 app.include_router(settings.router)
+app.include_router(upload_router)
 
-# Serva uppladdade filer
 app.mount("/uploaded_files", StaticFiles(directory="uploaded_files"), name="uploaded_files")
 
 @app.get("/")
