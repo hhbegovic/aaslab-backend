@@ -71,6 +71,7 @@ def get_verified_users():
     db = SessionLocal()
     try:
         users = db.query(User).filter_by(is_verified=True).all()
+        print("Verified users found:", users)  # Debug-rad
         return [user.username for user in users]
     finally:
         db.close()
