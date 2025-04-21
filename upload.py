@@ -35,7 +35,8 @@ async def upload_analysis(
 
             # ✅ Rätt endpoint: /upload/bucket/filename
             response = requests.post(
-                f"https://{SUPABASE_URL}/storage/v1/object/upload/{SUPABASE_BUCKET}/{unique_filename}",
+                f"https://{SUPABASE_URL}/storage/v1/object/{SUPABASE_BUCKET}/{unique_filename}",
+
                 headers={
                     "apikey": SUPABASE_KEY,
                     "Authorization": f"Bearer {SUPABASE_KEY}",
