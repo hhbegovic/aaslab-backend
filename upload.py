@@ -110,16 +110,17 @@ def delete_analysis(analysis_id: int):
             raise HTTPException(status_code=404, detail="Analysis not found")
 
         file_urls = analysis.file_paths.split(";") if analysis.file_paths else []
-        paths_to_delete = [url.split("/")[-1] for url in file_urls]
+        prefixes = [url.split("/")[-1] for url in file_urls]
 
+        # ✅ Rätt endpoint + "prefixes"
         delete_response = requests.post(
-            f"https://{SUPABASE_URL}/storage/v1/object/delete",
+            f"https://{SUPABASE_URL}/storage/v1/object/{SUPABASE_BUCKET}/remove",
             headers={
                 "apikey": SUPABASE_KEY,
                 "Authorization": f"Bearer {SUPABASE_KEY}",
                 "Content-Type": "application/json"
             },
-            json={"paths": paths_to_delete}
+            json={"prefixes": prefixes}
         )
 
         if delete_response.status_code not in [200, 204]:
