@@ -1,19 +1,17 @@
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from fastapi.responses import JSONResponse
-from fastapi.staticfiles import StaticFiles
 from app.database import SessionLocal
 from models import Analysis
+from sqlalchemy.exc import SQLAlchemyError
 import os
 import uuid
-from sqlalchemy.exc import SQLAlchemyError
+import requests
 
 router = APIRouter()
 
-UPLOAD_DIR = "uploaded_files"
-os.makedirs(UPLOAD_DIR, exist_ok=True)
-
-# 🟢 Servera statiska filer (lägg till i main.py)
-# app.mount("/uploaded_files", StaticFiles(directory="uploaded_files"), name="uploaded_files")
+SUPABASE_URL = "yznvfrfaqlljfnbqxzgr.supabase.co"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl6bnZmcmZhcWxsamZuYnF4emdyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUwODc5MDksImV4cCI6MjA2MDY2MzkwOX0.hzjqG-0w8UZdaVoOfQ0ODeMua2TDZDnixRUaoG6ApFU"
+SUPABASE_BUCKET = "analysis-files"  # Du kan skapa denna i Supabase → Storage
 
 @router.post("/upload-analysis")
 async def upload_analysis(
@@ -32,13 +30,23 @@ async def upload_analysis(
         for file in files:
             file_ext = file.filename.split('.')[-1]
             unique_filename = f"{uuid.uuid4()}.{file_ext}"
-            file_location = os.path.join(UPLOAD_DIR, unique_filename)
 
-            with open(file_location, "wb") as f:
-                f.write(await file.read())
+            file_bytes = await file.read()
 
-            # ✅ Konvertera till URL
-            public_url = f"https://aaslab-api.onrender.com/{file_location.replace(os.sep, '/')}"
+            response = requests.post(
+                f"https://{SUPABASE_URL}/storage/v1/object/{SUPABASE_BUCKET}/{unique_filename}",
+                headers={
+                    "apikey": SUPABASE_KEY,
+                    "Authorization": f"Bearer {SUPABASE_KEY}",
+                    "Content-Type": file.content_type
+                },
+                data=file_bytes
+            )
+
+            if response.status_code != 200 and response.status_code != 201:
+                raise HTTPException(status_code=500, detail="❌ Failed to upload file to Supabase Storage")
+
+            public_url = f"https://{SUPABASE_URL}/storage/v1/object/public/{SUPABASE_BUCKET}/{unique_filename}"
             saved_paths.append(public_url)
 
         analysis = Analysis(
@@ -67,7 +75,6 @@ async def upload_analysis(
         db.close()
 
 
-# 🟢 Hämta alla analyser
 @router.get("/analyses")
 def get_all_analyses():
     db = SessionLocal()
