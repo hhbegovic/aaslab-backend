@@ -110,7 +110,7 @@ def delete_analysis(analysis_id: int):
             raise HTTPException(status_code=404, detail="Analysis not found")
 
         file_urls = analysis.file_paths.split(";") if analysis.file_paths else []
-        paths_to_delete = [f"{SUPABASE_BUCKET}/{url.split('/')[-1]}" for url in file_urls]
+        paths_to_delete = [url.split("/")[-1] for url in file_urls]
 
         delete_response = requests.post(
             f"https://{SUPABASE_URL}/storage/v1/object/delete",
