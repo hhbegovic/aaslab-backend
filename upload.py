@@ -100,7 +100,7 @@ def get_all_analyses():
         db.close()
 
 
-# 🗑️ Delete analysis + files from Supabase
+# 🗑️ Delete analysis + Supabase files
 @router.delete("/delete-analysis/{analysis_id}")
 def delete_analysis(analysis_id: int):
     db = SessionLocal()
@@ -109,21 +109,22 @@ def delete_analysis(analysis_id: int):
         if not analysis:
             raise HTTPException(status_code=404, detail="Analysis not found")
 
-        # Radera varje fil från Supabase Storage
         file_urls = analysis.file_paths.split(";") if analysis.file_paths else []
-        for url in file_urls:
-            filename = url.split("/")[-1]
-            delete_response = requests.delete(
-                f"https://{SUPABASE_URL}/storage/v1/object/{SUPABASE_BUCKET}/{filename}",
-                headers={
-                    "apikey": SUPABASE_KEY,
-                    "Authorization": f"Bearer {SUPABASE_KEY}",
-                },
-            )
-            if delete_response.status_code not in [200, 204]:
-                print(f"❌ Failed to delete file: {filename}")
+        paths_to_delete = [f"{SUPABASE_BUCKET}/{url.split('/')[-1]}" for url in file_urls]
 
-        # Radera analysen från databasen
+        delete_response = requests.post(
+            f"https://{SUPABASE_URL}/storage/v1/object/delete",
+            headers={
+                "apikey": SUPABASE_KEY,
+                "Authorization": f"Bearer {SUPABASE_KEY}",
+                "Content-Type": "application/json"
+            },
+            json={"paths": paths_to_delete}
+        )
+
+        if delete_response.status_code not in [200, 204]:
+            print("❌ Failed to delete files from Supabase:", delete_response.text)
+
         db.delete(analysis)
         db.commit()
         return JSONResponse(content={"message": "Analysis and files deleted"}, status_code=200)
