@@ -11,7 +11,7 @@ router = APIRouter()
 
 SUPABASE_URL = "yznvfrfaqlljfnbqxzgr.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl6bnZmcmZhcWxsamZuYnF4emdyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUwODc5MDksImV4cCI6MjA2MDY2MzkwOX0.hzjqG-0w8UZdaVoOfQ0ODeMua2TDZDnixRUaoG6ApFU"
-SUPABASE_BUCKET = "analysis-files"  # Du kan skapa denna i Supabase → Storage
+SUPABASE_BUCKET = "analysis-files"  # Skapad i Supabase → Storage
 
 @router.post("/upload-analysis")
 async def upload_analysis(
@@ -33,17 +33,18 @@ async def upload_analysis(
 
             file_bytes = await file.read()
 
+            # ✅ Rätt endpoint: /upload/bucket/filename
             response = requests.post(
-                f"https://{SUPABASE_URL}/storage/v1/object/{SUPABASE_BUCKET}/{unique_filename}",
+                f"https://{SUPABASE_URL}/storage/v1/object/upload/{SUPABASE_BUCKET}/{unique_filename}",
                 headers={
                     "apikey": SUPABASE_KEY,
                     "Authorization": f"Bearer {SUPABASE_KEY}",
-                    "Content-Type": file.content_type
                 },
-                data=file_bytes
+                files={"file": (unique_filename, file_bytes, file.content_type)},
             )
 
             if response.status_code != 200 and response.status_code != 201:
+                print("❌ Upload failed:", response.text)
                 raise HTTPException(status_code=500, detail="❌ Failed to upload file to Supabase Storage")
 
             public_url = f"https://{SUPABASE_URL}/storage/v1/object/public/{SUPABASE_BUCKET}/{unique_filename}"
