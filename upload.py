@@ -11,7 +11,7 @@ router = APIRouter()
 
 SUPABASE_URL = "yznvfrfaqlljfnbqxzgr.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl6bnZmcmZhcWxsamZuYnF4emdyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUwODc5MDksImV4cCI6MjA2MDY2MzkwOX0.hzjqG-0w8UZdaVoOfQ0ODeMua2TDZDnixRUaoG6ApFU"
-SUPABASE_BUCKET = "analysis-files"  # Skapad i Supabase → Storage
+SUPABASE_BUCKET = "analysis-files"
 
 @router.post("/upload-analysis")
 async def upload_analysis(
@@ -30,13 +30,10 @@ async def upload_analysis(
         for file in files:
             file_ext = file.filename.split('.')[-1]
             unique_filename = f"{uuid.uuid4()}.{file_ext}"
-
             file_bytes = await file.read()
 
-            # ✅ Rätt endpoint: /upload/bucket/filename
             response = requests.post(
                 f"https://{SUPABASE_URL}/storage/v1/object/{SUPABASE_BUCKET}/{unique_filename}",
-
                 headers={
                     "apikey": SUPABASE_KEY,
                     "Authorization": f"Bearer {SUPABASE_KEY}",
@@ -99,5 +96,39 @@ def get_all_analyses():
     except Exception as e:
         print("❌ GET ERROR:", str(e))
         raise HTTPException(status_code=500, detail="Internal Server Error")
+    finally:
+        db.close()
+
+
+# 🗑️ Delete analysis + files from Supabase
+@router.delete("/delete-analysis/{analysis_id}")
+def delete_analysis(analysis_id: int):
+    db = SessionLocal()
+    try:
+        analysis = db.query(Analysis).filter(Analysis.id == analysis_id).first()
+        if not analysis:
+            raise HTTPException(status_code=404, detail="Analysis not found")
+
+        # Radera varje fil från Supabase Storage
+        file_urls = analysis.file_paths.split(";") if analysis.file_paths else []
+        for url in file_urls:
+            filename = url.split("/")[-1]
+            delete_response = requests.delete(
+                f"https://{SUPABASE_URL}/storage/v1/object/{SUPABASE_BUCKET}/{filename}",
+                headers={
+                    "apikey": SUPABASE_KEY,
+                    "Authorization": f"Bearer {SUPABASE_KEY}",
+                },
+            )
+            if delete_response.status_code not in [200, 204]:
+                print(f"❌ Failed to delete file: {filename}")
+
+        # Radera analysen från databasen
+        db.delete(analysis)
+        db.commit()
+        return JSONResponse(content={"message": "Analysis and files deleted"}, status_code=200)
+    except Exception as e:
+        print("❌ DELETE ERROR:", str(e))
+        raise HTTPException(status_code=500, detail="Failed to delete analysis")
     finally:
         db.close()
