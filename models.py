@@ -31,3 +31,4 @@ class Setting(Base):
     contact_email = Column(Text)
     banner_url = Column(Text)
     banner_image_path = Column(Text)
+    banner_list = Column(Text)  # ✅ TILLAGD – lista med {image, url} objekt

@@ -4,6 +4,7 @@ from app.database import SessionLocal
 from models import Setting
 import os
 import shutil
+import json
 
 router = APIRouter()
 
@@ -16,6 +17,10 @@ class SettingsUpdateRequest(BaseModel):
     banner_url: str
     banner_image_path: str
 
+class BannerItem(BaseModel):
+    image: str
+    url: str
+
 @router.get("/settings")
 def get_settings():
     db = SessionLocal()
@@ -27,7 +32,8 @@ def get_settings():
             "btc_address": settings.btc_address or "",
             "contact_email": settings.contact_email or "",
             "banner_url": settings.banner_url or "",
-            "banner_image_path": settings.banner_image_path or ""
+            "banner_image_path": settings.banner_image_path or "",
+            "banner_list": json.loads(settings.banner_list or "[]")
         }
     finally:
         db.close()
@@ -71,3 +77,55 @@ def upload_banner_image(file: UploadFile = File(...)):
         return {"banner_image_path": url}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Upload failed: {e}")
+
+@router.get("/banner-list")
+def get_banner_list():
+    db = SessionLocal()
+    try:
+        settings = db.query(Setting).first()
+        if not settings:
+            return []
+        return json.loads(settings.banner_list or "[]")
+    finally:
+        db.close()
+
+@router.post("/add-banner")
+def add_banner(item: BannerItem):
+    db = SessionLocal()
+    try:
+        settings = db.query(Setting).first()
+        if not settings:
+            settings = Setting(banner_list=json.dumps([]))
+            db.add(settings)
+            db.commit()
+            db.refresh(settings)
+
+        banners = json.loads(settings.banner_list or "[]")
+        banners.append(item.dict())
+        settings.banner_list = json.dumps(banners)
+        db.commit()
+        return {"message": "Banner added"}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to add banner: {e}")
+    finally:
+        db.close()
+
+@router.post("/delete-banner")
+def delete_banner(item: BannerItem):
+    db = SessionLocal()
+    try:
+        settings = db.query(Setting).first()
+        if not settings:
+            raise HTTPException(status_code=404, detail="Settings not found")
+
+        banners = json.loads(settings.banner_list or "[]")
+        banners = [b for b in banners if b["image"] != item.image or b["url"] != item.url]
+        settings.banner_list = json.dumps(banners)
+        db.commit()
+        return {"message": "Banner deleted"}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to delete banner: {e}")
+    finally:
+        db.close()
