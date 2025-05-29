@@ -22,6 +22,8 @@ async def upload_analysis(
     actual_amount: str = Form(...),
     uploaded_by: str = Form(...),
     external_link: str = Form(""),
+    verification_code: str = Form(None),
+    task_number: str = Form(None),
     files: list[UploadFile] = File(...)
 ):
     db = SessionLocal()
@@ -56,7 +58,9 @@ async def upload_analysis(
             actual_amount=actual_amount,
             uploaded_by=uploaded_by,
             file_paths=";".join(saved_paths),
-            external_link=external_link
+            external_link=external_link,
+            verification_code=verification_code,
+            task_number=task_number
         )
 
         db.add(analysis)
@@ -90,6 +94,8 @@ def get_all_analyses():
                 "actual_amount": a.actual_amount,
                 "uploaded_by": a.uploaded_by,
                 "external_link": a.external_link,
+                "verification_code": a.verification_code,  # ✅ TILLAGT
+                "task_number": a.task_number,              # ✅ TILLAGT
                 "file_paths": a.file_paths.split(";") if a.file_paths else []
             })
         return result
@@ -111,7 +117,6 @@ def delete_analysis(analysis_id: int):
         file_urls = analysis.file_paths.split(";") if analysis.file_paths else []
         filenames = [url.split("/")[-1] for url in file_urls]
 
-        # 👇 Skicka med rätt struktur
         delete_response = requests.post(
             f"https://{SUPABASE_URL}/storage/v1/object/{SUPABASE_BUCKET}/remove",
             headers={

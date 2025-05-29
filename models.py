@@ -13,6 +13,8 @@ class Analysis(Base):
     uploaded_by = Column(String, nullable=False)
     file_paths = Column(Text, nullable=False)
     external_link = Column(String, nullable=True)
+    verification_code = Column(String, nullable=True)  # ✅ Nytt fält
+    task_number = Column(String, nullable=True)        # ✅ Nytt fält
 
 class User(Base):
     __tablename__ = "users"
