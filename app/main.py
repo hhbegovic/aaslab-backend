@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routers import analysis, user, settings
 from upload import router as upload_router
-from routers import report_analysis
+from routers.report_analysis import router as report_router
 from fastapi.staticfiles import StaticFiles
 
 app = FastAPI()
