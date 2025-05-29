@@ -19,7 +19,7 @@ app.include_router(analysis.router)
 app.include_router(user.router)
 app.include_router(settings.router)
 app.include_router(upload_router)
-app.include_router(report_analysis.router)
+app.include_router(report_router)
 
 app.mount("/uploaded_files", StaticFiles(directory="uploaded_files"), name="uploaded_files")
 
