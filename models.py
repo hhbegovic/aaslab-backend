@@ -13,8 +13,9 @@ class Analysis(Base):
     uploaded_by = Column(String, nullable=False)
     file_paths = Column(Text, nullable=False)
     external_link = Column(String, nullable=True)
-    verification_code = Column(String, nullable=True)  # ✅ Nytt fält
-    task_number = Column(String, nullable=True)        # ✅ Nytt fält
+    lab = Column(String, nullable=True)  # ✅ SAKNAS I DIN – nu tillagd
+    verification_code = Column(String, nullable=True)
+    task_number = Column(String, nullable=True)
 
 class User(Base):
     __tablename__ = "users"
@@ -23,7 +24,7 @@ class User(Base):
     username = Column(String, unique=True, nullable=False)
     password = Column(String, nullable=False)
     is_admin = Column(Integer, default=0)
-    is_verified = Column(Boolean, default=False)  # ✅ TILLAGD
+    is_verified = Column(Boolean, default=False)
 
 class Setting(Base):
     __tablename__ = "settings"
@@ -33,4 +34,4 @@ class Setting(Base):
     contact_email = Column(Text)
     banner_url = Column(Text)
     banner_image_path = Column(Text)
-    banner_list = Column(Text)  # ✅ TILLAGD – lista med {image, url} objekt
+    banner_list = Column(Text)

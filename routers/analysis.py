@@ -5,11 +5,9 @@ from sqlalchemy.exc import SQLAlchemyError
 
 router = APIRouter()
 
-
 @router.get("/ping")
 async def ping():
     return {"message": "pong"}
-
 
 @router.get("/analyses")
 def get_all_analyses():
@@ -26,7 +24,10 @@ def get_all_analyses():
                 "actual_amount": analysis.actual_amount,
                 "uploaded_by": analysis.uploaded_by,
                 "external_link": analysis.external_link,
-                "file_paths": analysis.file_paths.split(";") if analysis.file_paths else []
+                "file_paths": analysis.file_paths.split(";") if analysis.file_paths else [],
+                "lab": analysis.lab,
+                "verification_code": analysis.verification_code,
+                "task_number": analysis.task_number,
             }
             for analysis in analyses
         ]
@@ -35,7 +36,6 @@ def get_all_analyses():
         raise HTTPException(status_code=500, detail="Failed to retrieve analyses")
     finally:
         db.close()
-
 
 @router.delete("/delete-analysis/{analysis_id}")
 def delete_analysis(analysis_id: int):

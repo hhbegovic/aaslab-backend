@@ -24,6 +24,7 @@ async def upload_analysis(
     external_link: str = Form(""),
     verification_code: str = Form(None),
     task_number: str = Form(None),
+    lab: str = Form(""),  # ✅ NYTT FÄLT
     files: list[UploadFile] = File(...)
 ):
     db = SessionLocal()
@@ -60,7 +61,8 @@ async def upload_analysis(
             file_paths=";".join(saved_paths),
             external_link=external_link,
             verification_code=verification_code,
-            task_number=task_number
+            task_number=task_number,
+            lab=lab  # ✅ SPARA I DB
         )
 
         db.add(analysis)
@@ -94,8 +96,9 @@ def get_all_analyses():
                 "actual_amount": a.actual_amount,
                 "uploaded_by": a.uploaded_by,
                 "external_link": a.external_link,
-                "verification_code": a.verification_code,  # ✅ TILLAGT
-                "task_number": a.task_number,              # ✅ TILLAGT
+                "verification_code": a.verification_code,
+                "task_number": a.task_number,
+                "lab": a.lab,  # ✅ RETURNERA LAB
                 "file_paths": a.file_paths.split(";") if a.file_paths else []
             })
         return result
