@@ -4,6 +4,7 @@ from routers import analysis, user, settings
 from upload import router as upload_router
 from routers.report_analysis import router as report_router
 from fastapi.staticfiles import StaticFiles
+from banners import router as banners_router
 
 app = FastAPI()
 
@@ -20,6 +21,7 @@ app.include_router(user.router)
 app.include_router(settings.router)
 app.include_router(upload_router)
 app.include_router(report_router)
+app.include_router(banners_router)
 
 app.mount("/uploaded_files", StaticFiles(directory="uploaded_files"), name="uploaded_files")
 
