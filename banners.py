@@ -19,12 +19,16 @@ async def upload_banner_image(file: UploadFile = File(...)):
         file_bytes = await file.read()
 
         # Ladda upp till Supabase Storage
-        res = supabase.storage.from_(SUPABASE_BUCKET).upload(filename, file_bytes, {"content-type": file.content_type})
+        res = supabase.storage.from_(SUPABASE_BUCKET).upload(
+    f"public/{filename}",  # viktigt att prefixa med 'public/'
+    file_bytes,
+    {"content-type": file.content_type}
+)
         if res.get("error"):
             raise HTTPException(status_code=500, detail="Upload failed")
 
         # Hämta public URL
-        public_url = supabase.storage.from_(SUPABASE_BUCKET).get_public_url(filename)
+        public_url = supabase.storage.from_(SUPABASE_BUCKET).get_public_url(f"public/{filename}")
         return {"banner_image_path": public_url}
     except Exception as e:
         print("❌ Banner upload error:", e)
