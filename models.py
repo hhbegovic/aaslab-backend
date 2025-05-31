@@ -35,3 +35,10 @@ class Setting(Base):
     banner_url = Column(Text)
     banner_image_path = Column(Text)
     banner_list = Column(Text)
+
+class Banner(Base):
+    __tablename__ = "banners"
+
+    id = Column(Integer, primary_key=True, index=True)
+    image = Column(String, nullable=False)
+    url = Column(String, nullable=False)

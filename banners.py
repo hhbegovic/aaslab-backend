@@ -1,53 +1,62 @@
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from fastapi.responses import JSONResponse
-from supabase import create_client
 import uuid
+import requests
+from app.database import SessionLocal
+from models import Banner  # 👈 se till att du har en Banner-modell i models.py
+from sqlalchemy.exc import SQLAlchemyError
 
-SUPABASE_URL = "https://yznvfrfaqlljfnbqxzgr.supabase.co"
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl6bnZmcmZhcWxsamZuYnF4emdyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUwODc5MDksImV4cCI6MjA2MDY2MzkwOX0.hzjqG-0w8UZdaVoOfQ0ODeMua2TDZDnixRUaoG6ApFU"  # (använd din befintliga API-nyckel)
-SUPABASE_BUCKET = "banner-images"
-
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 router = APIRouter()
 
+SUPABASE_URL = "yznvfrfaqlljfnbqxzgr.supabase.co"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl6bnZmcmZhcWxsamZuYnF4emdyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUwODc5MDksImV4cCI6MjA2MDY2MzkwOX0.hzjqG-0w8UZdaVoOfQ0ODeMua2TDZDnixRUaoG6ApFU"
+SUPABASE_BUCKET = "banner-images"
+
 @router.post("/upload-banner-image")
-async def upload_banner_image(file: UploadFile = File(...)):
+async def upload_banner_image(file: UploadFile = File(...), url: str = Form(...)):
     try:
-        # Generera unikt filnamn
+        # Skapa unikt filnamn
         ext = file.filename.split('.')[-1]
         filename = f"{uuid.uuid4()}.{ext}"
         file_bytes = await file.read()
 
-        # Ladda upp till Supabase Storage
-        res = supabase.storage.from_(SUPABASE_BUCKET).upload(
-    f"public/{filename}",  # viktigt att prefixa med 'public/'
-    file_bytes,
-    {"content-type": file.content_type}
-)
-        if res.get("error"):
-            raise HTTPException(status_code=500, detail="Upload failed")
+        # Ladda upp till Supabase Storage (utan supabase-py)
+        response = requests.post(
+            f"https://{SUPABASE_URL}/storage/v1/object/{SUPABASE_BUCKET}/{filename}",
+            headers={
+                "apikey": SUPABASE_KEY,
+                "Authorization": f"Bearer {SUPABASE_KEY}"
+            },
+            files={"file": (filename, file_bytes, file.content_type)},
+        )
 
-        # Hämta public URL
-        public_url = supabase.storage.from_(SUPABASE_BUCKET).get_public_url(f"public/{filename}")
-        return {"banner_image_path": public_url}
+        if response.status_code not in [200, 201]:
+            print("❌ Upload failed:", response.text)
+            raise HTTPException(status_code=500, detail="Failed to upload to Supabase")
+
+        public_url = f"https://{SUPABASE_URL}/storage/v1/object/public/{SUPABASE_BUCKET}/{filename}"
+
+        # Spara till databas
+        db = SessionLocal()
+        banner = Banner(image=public_url, url=url)
+        db.add(banner)
+        db.commit()
+        db.close()
+
+        return {"message": "Banner uploaded", "url": public_url}
     except Exception as e:
-        print("❌ Banner upload error:", e)
+        print("❌ Banner upload error:", str(e))
         raise HTTPException(status_code=500, detail="Internal server error")
 
-@router.post("/add-banner")
-async def add_banner(data: dict):
-    image = data.get("image")
-    url = data.get("url")
-    if not image or not url:
-        raise HTTPException(status_code=400, detail="Missing image or url")
-    supabase.table("banners").insert({"image": image, "url": url}).execute()
-    return {"message": "Banner added"}
 
 @router.get("/banner-list")
-async def get_banners():
+def get_banners():
+    db = SessionLocal()
     try:
-        res = supabase.table("banners").select("*").execute()
-        return res.data
+        banners = db.query(Banner).all()
+        return [{"id": b.id, "image": b.image, "url": b.url} for b in banners]
     except Exception as e:
         print("❌ Fetch banners error:", e)
         raise HTTPException(status_code=500, detail="Could not fetch banners")
+    finally:
+        db.close()
