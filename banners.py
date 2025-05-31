@@ -4,7 +4,7 @@ from supabase import create_client
 import uuid
 
 SUPABASE_URL = "https://yznvfrfaqlljfnbqxzgr.supabase.co"
-SUPABASE_KEY = "eyJhbGciOi..."  # (använd din befintliga API-nyckel)
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl6bnZmcmZhcWxsamZuYnF4emdyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUwODc5MDksImV4cCI6MjA2MDY2MzkwOX0.hzjqG-0w8UZdaVoOfQ0ODeMua2TDZDnixRUaoG6ApFU"  # (använd din befintliga API-nyckel)
 SUPABASE_BUCKET = "banner-images"
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
