@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from app.database import SessionLocal
 from models import User
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 router = APIRouter()
 
@@ -90,5 +90,18 @@ def verify_user(request: VerifyUserRequest):
         user.is_verified = True
         db.commit()
         return {"message": f"{user.username} is now verified"}
+    finally:
+        db.close()
+
+# ✅ NY: Endpoint för totalantal användare
+@router.get("/user-count")
+def get_user_count():
+    db = SessionLocal()
+    try:
+        count = db.query(User).count()
+        return {"total_users": count}
+    except SQLAlchemyError as e:
+        print("❌ USER COUNT ERROR:", str(e))
+        raise HTTPException(status_code=500, detail="Failed to fetch user count")
     finally:
         db.close()
