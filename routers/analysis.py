@@ -40,6 +40,18 @@ def get_all_analyses():
     finally:
         db.close()
 
+@router.get("/analysis-count")
+def get_analysis_count():
+    db = SessionLocal()
+    try:
+        count = db.query(Analysis).count()
+        return {"total_analyses": count}
+    except SQLAlchemyError as e:
+        print("❌ COUNT ANALYSES ERROR:", str(e))
+        raise HTTPException(status_code=500, detail="Failed to count analyses")
+    finally:
+        db.close()
+
 @router.delete("/delete-analysis/{analysis_id}")
 def delete_analysis(analysis_id: int):
     db = SessionLocal()
