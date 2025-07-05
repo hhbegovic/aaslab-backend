@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException
 from app.database import SessionLocal
 from models import Analysis
 from sqlalchemy.exc import SQLAlchemyError
+from pydantic import BaseModel
 
 router = APIRouter()
 
@@ -28,6 +29,8 @@ def get_all_analyses():
                 "lab": analysis.lab,
                 "verification_code": analysis.verification_code,
                 "task_number": analysis.task_number,
+                "pip_count": analysis.pip_count,
+                "nopip_count": analysis.nopip_count,
             }
             for analysis in analyses
         ]
@@ -52,5 +55,36 @@ def delete_analysis(analysis_id: int):
         db.rollback()
         print("❌ DELETE ANALYSIS ERROR:", str(e))
         raise HTTPException(status_code=500, detail="Failed to delete analysis")
+    finally:
+        db.close()
+
+# -------------------------------
+# ✅ NEW: Vote on analysis (Pip / No Pip)
+# -------------------------------
+class VoteRequest(BaseModel):
+    analysisId: int
+    vote: str  # "pip" or "nopip"
+
+@router.post("/vote-analysis")
+def vote_analysis(data: VoteRequest):
+    db = SessionLocal()
+    try:
+        analysis = db.query(Analysis).filter(Analysis.id == data.analysisId).first()
+        if not analysis:
+            raise HTTPException(status_code=404, detail="Analysis not found")
+
+        if data.vote == "pip":
+            analysis.pip_count += 1
+        elif data.vote == "nopip":
+            analysis.nopip_count += 1
+        else:
+            raise HTTPException(status_code=400, detail="Invalid vote type")
+
+        db.commit()
+        return {"success": True, "vote": data.vote}
+    except SQLAlchemyError as e:
+        db.rollback()
+        print("❌ VOTE ANALYSIS ERROR:", str(e))
+        raise HTTPException(status_code=500, detail="Failed to record vote")
     finally:
         db.close()
